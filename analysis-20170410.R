@@ -1,30 +1,33 @@
 # Install required package(s)
-if(!require(RVAideMemoire)){install.packages("RVAideMemoire")}
-require(RVAideMemoire)
+if(!require(RVAideMemoire)) {
+  install.packages("RVAideMemoire")
+  require(RVAideMemoire)
+}
 
 # Read data
-data <- read.csv("consensus_ratings.csv")
+wide_data <- read.csv("consensus_ratings.csv")
 
 # Descriptive statistics
-summary(data$committee)
-summary(data$study_type)
-summary(data$op_report)
-summary(data$op_materials)
-summary(data$op_preregistration)
-summary(data$op_data)
+summary(wide_data$committee)
+summary(wide_data$study_type)
+summary(wide_data$op_report)
+summary(wide_data$op_materials)
+summary(wide_data$op_preregistration)
+summary(wide_data$op_data)
 
-# Create unique id to avoid problems from duplicate dnrs
-data$unique_id <- paste(data$committee, data$dnr1, sep = " ") 
+# Create unique id for each application to avoid problems from duplicate dnrs
+wide_data$unique_id <- paste(wide_data$committee, wide_data$dnr1, sep = " ") 
 
-concatenated_practices <- c("op_data", "op_report", "op_materials", "op_preregistration")
-reshaped_data <- reshape(data, varying = concatenated_practices, times = concatenated_practices, idvar = "unique_id", direction = "long", sep = "_")
+# Reshape data into long format for Cochran's Q test
+concat_practices <- c("op_data", "op_report", "op_materials", "op_preregistration")
+long_data <- reshape(wide_data, varying = concat_practices, idvar = "unique_id", direction = "long", sep = "_")
 
-xtabs(~ op + time, data = reshaped_data)
+xtabs(~ op + time, data = long_data)
 
 # Create dummy variable with only two categories for Cochran's Q test
-reshaped_data$binary_outcome <- "no"
-reshaped_data$binary_outcome[reshaped_data$op == "yes"] <- "yes"
-reshaped_data$binary_outcome <- as.factor(reshaped_data$binary_outcome)
+long_data$binary_outcome <- "no"
+long_data$binary_outcome[long_data$op == "yes"] <- "yes"
+long_data$binary_outcome <- as.factor(long_data$binary_outcome)
 
 # Run Cochran's Q test
-cochran.qtest(binary_outcome ~ time | unique_id, data = reshaped_data)
+cochran.qtest(binary_outcome ~ time | unique_id, data = long_data)
