@@ -60,4 +60,10 @@ wide_test_data$op_materials <- as.numeric(wide_test_data$op_materials)
 
 # Melt it wide
 # Throws warning, more info here: https://stackoverflow.com/questions/25688897/reshape2-melt-warning-message
-melted_data <- melt(wide_test_data, id = "unique_id", measured = concat_practices)
+melted_data <- melt(wide_test_data)
+
+# Binarify so that only "yes" is 1
+melted_data$outcome <- 0
+melted_data$outcome[melted_data$value == 3] <- 1
+
+cochran.qtest(outcome ~ variable | unique_id, melted_data)
