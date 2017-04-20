@@ -3,7 +3,10 @@ if(!require(RVAideMemoire)) {
   install.packages("RVAideMemoire")
   require(RVAideMemoire)
 }
-require(psych)
+if(!require(psych)) {
+  install.packages("psych")
+  require(psych)
+}
 
 # Read data
 wide_data <- read.csv("consensus_ratings.csv")
@@ -41,10 +44,6 @@ columns_to_keep = c("unique_id", "response", "practice")
 test_data <- test_data[ , columns_to_keep, drop = FALSE]
 test_data$response.n = as.numeric(test_data$response) - 1
 
-table <- xtabs(response.n ~ unique_id + practice, data = test_data)
-table
-xtabs( ~ practice + response, data = test_data)
-
 cochran.qtest(response.n ~ practice | unique_id, data = test_data)
 
 #### RESHAPE 2: This Time It's Personal
@@ -59,5 +58,10 @@ wide_test_data$op_data <- as.numeric(wide_test_data$op_data)
 wide_test_data$op_materials <- as.numeric(wide_test_data$op_materials)
 
 # Melt it wide
-# Throws warning, more info here: https://stackoverflow.com/questions/25688897/reshape2-melt-warning-message
-melted_data <- melt(wide_test_data, id = "unique_id", measured = concat_practices)
+melted_data <- melt(wide_test_data)
+
+# Binarify so that only "yes" is 1
+melted_data$outcome <- 0
+melted_data$outcome[melted_data$value == 3] <- 1
+
+cochran.qtest(outcome ~ variable | unique_id, melted_data)
