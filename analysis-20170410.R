@@ -3,7 +3,10 @@ if(!require(RVAideMemoire)) {
   install.packages("RVAideMemoire")
   require(RVAideMemoire)
 }
-require(psych)
+if(!require(psych)) {
+  install.packages("psych")
+  require(psych)
+}
 
 # Read data
 wide_data <- read.csv("consensus_ratings.csv")
@@ -55,10 +58,6 @@ test_data$response = factor(test_data$binary_outcome, levels = c("no", "yes"))
 columns_to_keep = c("unique_id", "response", "practice")
 test_data <- test_data[ , columns_to_keep, drop = FALSE]
 test_data$response.n = as.numeric(test_data$response) - 1
-
-table <- xtabs(response.n ~ unique_id + practice, data = test_data)
-table
-xtabs( ~ practice + response, data = test_data)
 
 cochran.qtest(response.n ~ practice | unique_id, data = test_data)
 
