@@ -28,10 +28,25 @@ xtabs(~ op + time, data = long_data)
 # Create binary integer variable for Cochran's Q test
 long_data$binary_outcome <- "no"
 long_data$binary_outcome[long_data$op == "yes"] <- "yes"
-# long_data$binary_outcome <- as.factor(long_data$binary_outcome) # doesn't seem to make a difference
+long_data$binary_outcome <- as.numeric(as.factor(long_data$binary_outcome)) - 1 
+
+str(long_data)
+
+xtabs(~ binary_outcome + time, data = long_data)
+tab <- xtabs(~ binary_outcome + time, data = long_data)
+tab2 <- tab[, 1:2]
+tab <- xtabs(~ binary_outcome + time, data = long_data)
+
+fisher.test(tab)
+fisher.test(tab[, 1:2])
+fisher.test(tab[, c(1, 3)])
+fisher.test(tab[, c(1, 4)])
+fisher.test(tab[, c(2, 3)])
+fisher.test(tab[, c(2, 4)])
+fisher.test(tab[, c(3, 4)])
 
 # Run Cochran's Q test
-cochran.qtest(binary_outcome ~ time | unique_id, alpha = 0.05, p.method = "fdr", data = long_data)
+test1 <- cochran.qtest(binary_outcome ~ time | unique_id, data = long_data)
 
 # Experimental
 test_data <- long_data
@@ -61,3 +76,30 @@ wide_test_data$op_materials <- as.numeric(wide_test_data$op_materials)
 # Melt it wide
 # Throws warning, more info here: https://stackoverflow.com/questions/25688897/reshape2-melt-warning-message
 melted_data <- melt(wide_test_data, id = "unique_id", measured = concat_practices)
+
+
+# Force the Q-test
+
+tab <- tapply(long_data$binary_outcome, list(long_data$unique_id, long_data$time), function(x) sum(x))
+k <- ncol(tab)
+b <- nrow(tab)
+X.j <- colSums(tab)
+Xi. <- rowSums(tab)
+N <- sum(X.j)
+Q <- k * (k - 1) * sum((X.j - N/k)^2)/sum(Xi. * (k - Xi.))
+p <- pchisq(Q, k - 1, lower.tail = FALSE)
+
+signs <- apply(tab[, c("data", "preregistration")], 1, diff)
+binom.test(length(signs[signs > 0]), length(signs[signs != 0]), 0.5)$p.value
+
+
+
+tab <- tapply(long_data$binary_outcome[long_data$time %in% c("data", "preregistration")], list(long_data$unique_id[long_data$time %in% c("data", "preregistration")], long_data$time[long_data$time %in% c("data", "preregistration")]), function(x) sum(x))
+k <- ncol(tab)
+b <- nrow(tab)
+X.j <- colSums(tab)
+Xi. <- rowSums(tab)
+N <- sum(X.j)
+Q <- k * (k - 1) * sum((X.j - N/k)^2)/sum(Xi. * (k - Xi.))
+p <- pchisq(Q, k - 1, lower.tail = FALSE)
+
