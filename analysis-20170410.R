@@ -9,6 +9,7 @@ if(!require(psych)) {
 }
 
 # Define Cochran's Q test function
+# Returns vector with two indices, where result[1] is the Q value and result[2] is the p value.
 q_test <- function(outcome, id, variables) {
   tab <- tapply(outcome, list(id, variables), function(x) sum(x))
   k <- ncol(tab)
@@ -26,6 +27,22 @@ q_test <- function(outcome, id, variables) {
   return(output)
 }
 
+# Post-hoc analysis function
+follow_up <- function(outcome, first_practice, second_practice, practices, id) {
+  tab <- tapply(outcome[practices %in% c(first_practice, second_practice)], list(id[practices %in% c(first_practice, second_practice)], practices[practices %in% c(first_practice, second_practice)]), function(x) sum(x))
+  k <- ncol(tab)
+  b <- nrow(tab)
+  X.j <- colSums(tab)
+  Xi. <- rowSums(tab)
+  N <- sum(X.j)
+  Q <- k * (k - 1) * sum((X.j - N/k)^2)/sum(Xi. * (k - Xi.))
+  p <- pchisq(Q, k - 1, lower.tail = FALSE)
+  
+  output <- c(Q, p)
+  
+  return(output)
+}
+  
 # Read data
 wide_data <- read.csv("consensus_ratings.csv")
 
@@ -58,6 +75,20 @@ xtabs(~ binary_outcome + time, data = long_data)
 result <- q_test(long_data$binary_outcome, long_data$unique_id, long_data$time)
 result[1]
 result[2]
+
+# Run post-hoc tests
+report_preregistration <- follow_up(long_data$binary_outcome, "report", "preregistration", long_data$time, long_data$unique_id)
+report_preregistration[1]
+report_preregistration[2]
+
+report_data <- follow_up(long_data$binary_outcome, "report", "data", long_data$time, long_data$unique_id)
+report_data[1]
+report_data[2]
+
+report_materials <- follow_up(long_data$binary_outcome, "report", "materials", long_data$time, long_data$unique_id)
+report_materials[1]
+report_materials[2]
+
 
 # Run follow up tests on the specified columns
 # repeat with other columns if necessary
