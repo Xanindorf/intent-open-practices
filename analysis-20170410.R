@@ -19,15 +19,14 @@ q_test <- function(outcome, id, variables) {
   N <- sum(X.j)
   
   Q <- k * (k - 1) * sum((X.j - N/k)^2)/sum(Xi. * (k - Xi.))
-  Q
   p <- pchisq(Q, k - 1, lower.tail = FALSE)
-  p
   output <- c(Q, p)
   
   return(output)
 }
 
 # Post-hoc analysis function
+# First output index is Q, second index is p
 follow_up <- function(outcome, first_practice, second_practice, practices, id) {
   tab <- tapply(outcome[practices %in% c(first_practice, second_practice)], list(id[practices %in% c(first_practice, second_practice)], practices[practices %in% c(first_practice, second_practice)]), function(x) sum(x))
   k <- ncol(tab)
@@ -67,7 +66,7 @@ xtabs(~ op + time, data = long_data)
 # Create binary integer variable for Cochran's Q test
 long_data$binary_outcome <- "no"
 long_data$binary_outcome[long_data$op == "yes"] <- "yes"
-long_data$binary_outcome <- as.numeric(as.factor(long_data$binary_outcome)) - 1 
+long_data$binary_outcome <- as.numeric(as.factor(long_data$binary_outcome)) - 1
 
 # Visualize binary data for each practice
 xtabs(~ binary_outcome + time, data = long_data)
@@ -89,16 +88,5 @@ report_materials <- follow_up(long_data$binary_outcome, "report", "materials", l
 report_materials[1]
 report_materials[2]
 
-
-# Run follow up tests on the specified columns
-# repeat with other columns if necessary
-# tab <- tapply(long_data$binary_outcome[long_data$time %in% c("data", "preregistration")], list(long_data$unique_id[long_data$time %in% c("data", "preregistration")], long_data$time[long_data$time %in% c("data", "preregistration")]), function(x) sum(x))
-# k <- ncol(tab)
-# b <- nrow(tab)
-# X.j <- colSums(tab)
-# Xi. <- rowSums(tab)
-# N <- sum(X.j)
-# Q <- k * (k - 1) * sum((X.j - N/k)^2)/sum(Xi. * (k - Xi.))
-# p <- pchisq(Q, k - 1, lower.tail = FALSE)
-
 # p.adjust(vektor_med_pvärden, method = fdr)
+p.adjust(c(report_preregistration[2], report_data[2], report_materials[2]), method = "fdr")
